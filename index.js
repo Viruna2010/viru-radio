@@ -7,30 +7,26 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-// සර්වර් එක ඇක්ටිව් ද කියලා බලන්න ලින්ක් එක
-app.get('/', (req, res) => {
-    res.send('Viru Radio is live and running!');
-});
+// සර්වර් එක චෙක් කරන්න
+app.get('/', (req, res) => res.send('Viru Radio is live and the image error is fixed!'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
     const playlistPath = path.join(__dirname, 'playlist.txt');
-
-    // music folder එකේ තියෙන MP3 ටික විතරක් ගන්නවා
+    
+    // music ෆෝල්ඩර් එකේ තියෙන MP3 විතරක් ගන්නවා
     let files = fs.readdirSync(musicDir).filter(file => file.toLowerCase().endsWith('.mp3'));
-
     if (files.length === 0) {
-        console.error("Error: No songs found in 'music' folder!");
+        console.error("No songs found!");
         return;
     }
-
+    
     // සින්දු ටික Random පිළිවෙළට සකසනවා
     files.sort(() => Math.random() - 0.5);
-
     const playlistContent = files.map(file => `file '${path.join(musicDir, file)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log(`Streaming started with ${files.length} songs...`);
+    console.log(`Streaming started with ${files.length} songs. (MP3 Image errors ignored)`);
 
     const ffmpeg = spawn('ffmpeg', [
         '-re', 
@@ -38,47 +34,41 @@ function startStreaming() {
         '-i', path.join(__dirname, 'video.mp4'),
         '-f', 'concat', 
         '-safe', '0', 
-        '-i', playlistPath,
+        '-vn', // වැදගත්ම දේ: සින්දුවල ඇතුළේ තියෙන පින්තූර (MP3 album art) අයින් කරනවා
+        '-i', playlistPath, 
         '-map', '0:v', 
         '-map', '1:a',
         '-c:v', 'libx264', 
         '-preset', 'ultrafast', 
         '-tune', 'zerolatency',
-        '-b:v', '250k',        // Render Free Tier එකට ගැලපෙන අඩු Bitrate එක
+        '-b:v', '250k', 
         '-maxrate', '250k', 
-        '-bufsize', '500k', 
+        '-bufsize', '500k',
         '-pix_fmt', 'yuv420p', 
-        '-g', '30', 
+        '-g', '60',
         '-c:a', 'aac', 
-        '-b:a', '64k', 
+        '-b:a', '128k', 
         '-ar', '44100',
         '-f', 'flv', 
         `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
     ffmpeg.stderr.on('data', (data) => {
-        // ලොග් එක ගොඩක් පිරෙන එක නවත්තන්න frame updates විතරක් පෙන්වනවා
         const output = data.toString();
         if (output.includes('frame=')) {
             process.stdout.write(`\r${output.substring(0, 60)}`);
         } else {
-            console.log(`FFmpeg Status: ${output}`);
+            console.log(`FFmpeg: ${output}`);
         }
     });
 
     ffmpeg.on('close', (code) => {
-        console.log(`Stream connection lost (Code: ${code}). Restarting in 5 seconds...`);
+        console.log(`Stream stopped. Restarting... Code: ${code}`);
         setTimeout(startStreaming, 5000);
     });
 }
 
-// සර්වර් එක මුලින්ම පටන් ගන්නවා, ඊට පස්සේ තමයි ස්ට්‍රීම් එක පටන් ගන්නේ
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is listening on port ${port}`);
-    if (STREAM_KEY) {
-        console.log("Stream key found. Starting FFmpeg...");
-        startStreaming();
-    } else {
-        console.error("Critical Error: STREAM_KEY is not defined in Environment Variables!");
-    }
+    console.log(`Server started on port ${port}`);
+    if (STREAM_KEY) startStreaming();
 });
