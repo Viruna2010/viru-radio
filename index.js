@@ -28,7 +28,7 @@ function startStreaming() {
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-stream_loop', '-1', '-i', videoFile,                // Input 0: වීඩියෝව (0.81MB)
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',      // Input 1: Copyright වලට එරෙහි හීනි වැස්ස
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03',      // Input 1: Copyright වලට එරෙහි හීනි වැස්ස
         '-f', 'concat', '-safe', '0', '-i', playlistPath,     // Input 2: ප්ලේලිස්ට් එක
         '-filter_complex', 
         // 🚀 SUPER SHIELD LOGIC:
