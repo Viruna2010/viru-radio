@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Excellent Signal Mode 🛡️🚀'));
+app.get('/', (req, res) => res.send('Viru Radio - Stable & Guarded! 🌧️📻'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,30 +21,26 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting EXCELLENT SIGNAL Stream...");
+    console.log("Starting Optimized Stream...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-loop', '1', '-i', videoFile,
+        // 🌧️ වැස්සේ සද්දය (Rain Noise)
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ Audio Guard: Pitch + Rain Mix
-        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m_a];' +
-        '[1:a]lowpass=f=1200,volume=0.9[r_a];' + 
-        '[m_a][r_a]amix=inputs=2:duration=first:weights=6 3[a_out];' +
-        // 📊 Visualizer: CPU එකට බර අඩු කරපු Sound Bars
-        '[a_out]showwaves=s=640x100:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_w];' + 
-        // 🚀 Signal Fix: Resolution 854x480 (480p) සහ FPS 10 ට අඩු කළා
+        // 🛠️ ඉතාම සරල Filter එකක්. උඹේ Beat Bars එකත් මෙතන තියෙනවා.
+        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[audio_tuned];' +
+        '[1:a]lowpass=f=1200,volume=0.8[rain_vibe];' + 
+        '[audio_tuned][rain_vibe]amix=inputs=2:duration=first:weights=6 2[final_a];' +
+        '[final_a]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_waves];' + 
         '[0:v]scale=854:480,fps=10[v_bg];' + 
-        '[v_bg][v_w]overlay=0:380[v_out]', 
-        '-map', '[v_out]', 
-        '-map', '[a_out]',
+        '[v_bg][v_waves]overlay=0:360[final_v]', 
+        '-map', '[final_v]', 
+        '-map', '[final_a]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-crf', '32',
-        '-b:v', '400k', 
-        '-maxrate', '400k', '-bufsize', '800k',
-        '-pix_fmt', 'yuv420p', '-g', '20', 
+        '-b:v', '450k', '-pix_fmt', 'yuv420p', '-g', '20', 
         '-c:a', 'aac', '-b:a', '128k', 
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
