@@ -4,11 +4,11 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const port = port = process.env.PORT || 10000;
+const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
 // Render එකට සර්වර් එක Active කියලා පෙන්වීමට
-app.get('/', (req, res) => res.send('Viru Radio PRO - Super Balanced Shield Active! 🛡️🚀'));
+app.get('/', (req, res) => res.send('Viru Radio PRO - Balanced Shield Active! 🛡️🚀'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -23,17 +23,17 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting TUNED AUDIO Stream (Rain Noise: 0.005)...");
+    console.log("Starting TUNED AUDIO Stream (Noise: 0.005)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile,               // Input 0: වීඩියෝව
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',     // Input 1: වැසි සද්දය (0.005 දක්වා අඩු කළා)
-        '-f', 'concat', '-safe', '0', '-i', playlistPath,    // Input 2: ප්ලේලිස්ට් එක
+        '-stream_loop', '-1', '-i', videoFile,               // Input 0: Video
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',      // Input 1: Rain Noise (Soft)
+        '-f', 'concat', '-safe', '0', '-i', playlistPath,    // Input 2: Playlist
         '-filter_complex', 
-        // 🛠️ මේ පේළිය මම උඹට ඕන විදිහට ටියුන් කළා:
-        // volume=1.8 - සින්දුවේ සද්දේ වැඩි කළා
-        // weights=10 1 - වැස්සට වඩා සින්දුවට 10 ගුණයක ප්‍රමුඛතාවයක් දුන්නා
+        // silenceremove: සින්දු අතර Gap එක නැති කරයි
+        // volume=1.8: සින්දුවේ සද්දය වැඩි කරයි
+        // weights=10 1: සින්දුවට වැඩි ප්‍රමුඛතාවයක් ලබා දෙයි
         '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100,volume=1.8[music]; [music][1:a]amix=inputs=2:duration=first:weights=10 1:dropout_transition=0[out]',
         '-map', '0:v', 
         '-map', '[out]',
