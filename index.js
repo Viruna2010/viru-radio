@@ -30,10 +30,10 @@ function startStreaming() {
         '-re',
         '-stream_loop', '-1', '-i', videoFile,
         // Render FFmpeg වලට ගැළපෙන සජීවී වැහි සද්දය (a=0.03)
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.02', 
         '-f', 'concat', '-safe', '0', '-i', playlistPath,
         '-filter_complex', 
-        '[2:a]atempo=1.06,asetrate=44100*1.03,aresample=44100[main]; [1:a][main]amix=inputs=2:duration=first[out]',
+        '[2:a]atempo=1.04,asetrate=44100*1.03,aresample=44100[main]; [1:a][main]amix=inputs=2:duration=first[out]',
         '-map', '0:v', '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-b:v', '500k', 
         '-pix_fmt', 'yuv420p', '-g', '60', '-c:a', 'aac', '-b:a', '128k',
