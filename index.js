@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Copyright Safe & Stable! 🌧️📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Master Vibe is LIVE! 🌧️📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -22,28 +22,26 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting ULTRA-SAFE MASTER Stream (Rain + Guard + Bars)...");
+    console.log("Starting FINAL MASTER STREAM (Risk 0 Mode)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-loop', '1', '-i', videoFile,
-        // 🌧️ වැස්සේ සද්දය (Rain Noise) - Copyright වලට තවත් උදව්වක්
+        // 🌧️ වැස්සේ සද්දය (Rain Noise)
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.02', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛡️ Audio Guard: සින්දුවේ Pitch එක 5% වැඩිකර වේගවත් කිරීම (Copyright Risk 0)
+        // 🛠️ Audio Processing: Pitch Guard (Copyright Risk 0) + Rain Mix
         '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[music_tuned];' +
-        // වැස්සේ සද්දය ලාවට පසුබිමින් ඇසෙන්නට සැකසීම
         '[1:a]lowpass=f=1200,volume=0.8[rain_vibe];' + 
-        // Audio Mixing: වැස්ස සහ සින්දුව මික්ස් කිරීම
-        '[music_tuned][rain_vibe]amix=inputs=2:duration=first:weights=6 2[a_out];' +
-        // 📊 Visualizer: කෙලින් රේඛා (Vertical Bars) පෙනෙන මෝඩ් එක
-        '[a_out]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_waves];' + 
-        // 🚀 CPU Risk 0: 480p/10fps නිසා Signal Excellent මට්ටමේ පවතී
+        '[music_tuned][rain_vibe]amix=inputs=2:duration=first:weights=6 2[a_final_mix];' +
+        // 📊 Visualizer: Vertical Bars (p2p mode)
+        '[a_final_mix]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_waves];' + 
+        // 🚀 CPU Optimization: 480p/10fps (Excellent Signal)
         '[0:v]scale=720:480,fps=10[v_scaled];' + 
-        '[v_scaled][v_waves]overlay=0:360[v_out]', 
-        '-map', '[v_out]', 
-        '-map', '[a_out]',
+        '[v_scaled][v_waves]overlay=0:360[v_final_out]', 
+        '-map', '[v_final_out]', 
+        '-map', '[a_final_mix]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-crf', '32',
         '-b:v', '400k', 
