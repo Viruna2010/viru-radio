@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Ultra Lite Speed Mode ⚡'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Excellent Signal Mode! 📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,7 +21,7 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting ULTRA LITE Stream (Max Speed)...");
+    console.log("Boosting Signal Performance (fps=5)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -29,18 +29,19 @@ function startStreaming() {
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ Audio: Pitch + Rain (මේක CPU එකට බර නෑ)
-        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m];' +
-        '[1:a]lowpass=f=1200,volume=0.9[r];' + 
-        '[m][r]amix=inputs=2:duration=first:weights=10 1[a_out];' +
-        // 🚀 Video: 360p / 8fps (CPU එකට පිහාටුවක් වගේ දැනෙයි)
-        '[0:v]scale=640:360,fps=8[v_out]', 
+        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[a_t];' +
+        '[1:a]lowpass=f=1200,volume=0.9[a_r];' + 
+        '[a_t][a_r]amix=inputs=2:duration=first:weights=6 3[a_out];' +
+        '[a_out]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_w];' + 
+        // 🚀 Frame rate එක 5fps දක්වා අඩු කළා (CPU එකට නිදහස දෙන්න)
+        '[0:v]scale=640:360,fps=5[v_bg];' + 
+        '[v_bg][v_w]overlay=0:240[v_out]', 
         '-map', '[v_out]', 
         '-map', '[a_out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-crf', '32',
-        '-b:v', '300k', // Bitrate එකත් අඩු කළා
-        '-pix_fmt', 'yuv420p', '-g', '16', 
+        '-crf', '35', // Quality පොඩ්ඩක් අඩු කළා ස්පීඩ් එක ගන්න
+        '-b:v', '300k', 
+        '-pix_fmt', 'yuv420p', '-g', '10', 
         '-c:a', 'aac', '-b:a', '96k', 
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
