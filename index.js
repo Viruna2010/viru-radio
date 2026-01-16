@@ -35,7 +35,7 @@ function startStreaming() {
         // - silenceremove: සින්දු අතර නිහඬ කොටස් ඉවත් කරයි.
         // - atempo & asetrate: Copyright Shield එක (Speed & Pitch).
         // - volume=1.8: සද්දය වැඩි කරයි.
-        // - amix weights=1 10: සින්දුවට වැඩි බරක් දී වැස්ස පසුබිමට දමයි.
+        // - amix weights=4 10: සින්දුවට වැඩි බරක් දී වැස්ස පසුබිමට දමයි.
         '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100,volume=1.8[music];' +
         '[1:a][music]amix=inputs=2:duration=first:weights=1 10:dropout_transition=0[out]',
         '-map', '0:v', 
