@@ -7,65 +7,48 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-// Render එකට සර්වර් එක Active කියලා පෙන්වීමට
-app.get('/', (req, res) => res.send('Viru Radio PRO - Master Mode Active! 🛡️🚀'));
+app.get('/', (req, res) => res.send('Viru Radio PRO - High Pitch & Heavy Rain Active! 🌧️📻'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
     const playlistPath = path.join(__dirname, 'playlist.txt');
     const videoFile = path.join(__dirname, 'video.mp4');
 
-    // 1. සින්දු ටික කියවීම සහ Shuffle කිරීම
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
-    if (files.length === 0) return console.error("Songs not found in music folder!");
+    if (files.length === 0) return console.error("Songs not found!");
     files.sort(() => Math.random() - 0.5);
 
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting FINAL STABLE Stream (0.81MB Video Optimization)...");
+    console.log("Starting Stream (Pitch: 1.05x | Rain: High Volume)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile,                // Input 0: වීඩියෝව (0.81MB)
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',      // Input 1: හීනි වැස්ස
-        '-f', 'concat', '-safe', '0', '-i', playlistPath,     // Input 2: ප්ලේලිස්ට් එක
+        '-stream_loop', '-1', '-i', videoFile,
+        // 🌧️ වැස්සේ සද්දය (Volume එක වැඩි කර ඇත)
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.08', 
+        '-f', 'concat', '-safe', '0', '-i', playlistPath,
         '-filter_complex', 
-        // 🛠️ Audio Logic: 
-        // - silenceremove: සින්දු අතර නිහඬ කොටස් ඉවත් කරයි.
-        // - atempo & asetrate: Copyright Shield එක (Speed & Pitch).
-        // - volume=1.8: සද්දය වැඩි කරයි.
-        // - amix weights=4 10: සින්දුවට වැඩි බරක් දී වැස්ස පසුබිමට දමයි.
-        '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100,volume=1.8[music];' +
-        '[1:a][music]amix=inputs=2:duration=first:weights=1 10:dropout_transition=0[out]',
-        '-map', '0:v', 
-        '-map', '[out]',
+        // Audio Logic: Pitch 1.05x + High Rain Volume Mix
+        '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,asetrate=44100*1.05,aresample=44100[m_tuned];' +
+        '[1:a]lowpass=f=1000,volume=1.8[r_heavy];' + 
+        '[m_tuned][r_heavy]amix=inputs=2:duration=first:weights=10 4[a_out];' +
+        // Video Fix: 480p/10fps (CPU Friendly)
+        '[0:v]scale=854:480,fps=10[v_out]',
+        '-map', '[v_out]', 
+        '-map', '[a_out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-b:v', '300k',                 // වීඩියෝ Bitrate (සැහැල්ලුයි)
-        '-maxrate', '300k', 
-        '-bufsize', '600k', 
-        '-s', '640x360',                // 360p Resolution (Stable Connection)
-        '-pix_fmt', 'yuv420p', '-g', '60', 
-        '-c:a', 'aac', '-b:a', '128k',  // Audio Quality (සින්දු හොඳට ඇහෙන්න)
-        '-ar', '44100',
+        '-crf', '32', '-b:v', '450k', 
+        '-pix_fmt', 'yuv420p', '-g', '20', 
+        '-c:a', 'aac', '-b:a', '128k', 
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
-    // Error logs බලාගැනීමට
     ffmpeg.stderr.on('data', (d) => console.log(`FFmpeg: ${d}`));
-    
-    ffmpeg.on('close', (code) => {
-        console.log(`Stream ended. Restarting in 2 seconds...`);
-        setTimeout(startStreaming, 2000);
-    });
+    ffmpeg.on('close', () => setTimeout(startStreaming, 3000));
 }
 
-// සර්වර් එක පණ ගැන්වීම
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on port ${port}`);
-    if (STREAM_KEY) {
-        startStreaming();
-    } else {
-        console.log("Error: STREAM_KEY is missing!");
-    }
+    if (STREAM_KEY) startStreaming();
 });
