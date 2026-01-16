@@ -4,11 +4,11 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const port = process.env.PORT || 10000;
+const port = port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
 // Render එකට සර්වර් එක Active කියලා පෙන්වීමට
-app.get('/', (req, res) => res.send('Viru Radio PRO - No Gap & Zero Risk Active! 🛡️🚀'));
+app.get('/', (req, res) => res.send('Viru Radio PRO - Super Balanced Shield Active! 🛡️🚀'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -23,17 +23,18 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting NO-GAP & PROTECTED Stream (Noise: 0.02)...");
+    console.log("Starting TUNED AUDIO Stream (Rain Noise: 0.005)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-stream_loop', '-1', '-i', videoFile,               // Input 0: වීඩියෝව
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.02',      // Input 1: සජීවී වැසි සද්දය
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',     // Input 1: වැසි සද්දය (0.005 දක්වා අඩු කළා)
         '-f', 'concat', '-safe', '0', '-i', playlistPath,    // Input 2: ප්ලේලිස්ට් එක
         '-filter_complex', 
-        // silenceremove: සින්දු අතර නිහඬ කොටස් කපා ඉවත් කර Gap එක නැති කරයි
-        // atempo=1.03 & asetrate=1.02: ආරක්ෂිත ශීල්ඩ් එක ක්‍රියාත්මක කරයි
-        '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100[music]; [1:a][music]amix=inputs=2:duration=first:dropout_transition=0[out]',
+        // 🛠️ මේ පේළිය මම උඹට ඕන විදිහට ටියුන් කළා:
+        // volume=1.8 - සින්දුවේ සද්දේ වැඩි කළා
+        // weights=10 1 - වැස්සට වඩා සින්දුවට 10 ගුණයක ප්‍රමුඛතාවයක් දුන්නා
+        '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100,volume=1.8[music]; [music][1:a]amix=inputs=2:duration=first:weights=10 1:dropout_transition=0[out]',
         '-map', '0:v', 
         '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-b:v', '500k', 
@@ -55,6 +56,6 @@ app.listen(port, '0.0.0.0', () => {
     if (STREAM_KEY) {
         startStreaming();
     } else {
-        console.log("Error: STREAM_KEY is missing in Environment Variables!");
+        console.log("Error: STREAM_KEY is missing!");
     }
 });
