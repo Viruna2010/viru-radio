@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Stable Signal Mode Active! 📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Ultra Light Stable Mode Active! 📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -22,7 +22,7 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting FINAL STABLE Stream (480p Optimized)...");
+    console.log("Starting ULTRA-LIGHT Stream (360p/15fps)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -30,18 +30,18 @@ function startStreaming() {
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ පර්ෆෙක්ට් සිග්නල් සඳහා 480p වලට scale කිරීම සහ Film Grain (Noise) effect එක එක් කිරීම
-        '[0:v]scale=854:480,noise=alls=10:allf=t+u[v_effect];' +
-        '[2:a:0]showwaves=s=854:100:mode=line:colors=0x00FFFF@0.6,format=rgba[v_waves];' + 
-        '[v_effect][v_waves]overlay=0:380[final_v];' +
+        // 🛠️ CPU එක උපරිමයෙන් බේරාගැනීමට 640x360 සහ 15fps වලට සීමා කර ඇත
+        '[0:v]scale=640:360,fps=15[v_scaled];' +
+        '[2:a:0]showwaves=s=640x80:mode=line:colors=0x00FFFF@0.5,format=rgba[v_waves];' + 
+        '[v_scaled][v_waves]overlay=0:280[final_v];' +
         '[2:a:0][1:a]amix=inputs=2:duration=first:weights=10 1[a_out]', 
         '-map', '[final_v]', 
         '-map', '[a_out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-crf', '32',                 // CPU එකට උපරිම සහනයක් දීමට
-        '-b:v', '500k',               // 480p සඳහා ස්ථාවර බිට්රේට් එක
-        '-pix_fmt', 'yuv420p', '-g', '60', 
-        '-c:a', 'aac', '-b:a', '128k', 
+        '-crf', '35',                 // Compression වැඩි කර බර අඩු කිරීම
+        '-b:v', '300k',               // ඉතා අඩු වීඩියෝ බිට්රේට් එකක්
+        '-pix_fmt', 'yuv420p', '-g', '30', 
+        '-c:a', 'aac', '-b:a', '96k', // ඕඩියෝ එක 96k වලට සෙට් කළා
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
