@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Fix Active! 📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Fix Live! 📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,7 +21,7 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting FINAL STABLE stream (No Label Mode)...");
+    console.log("Starting Stream - NO LABELS MODE...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -29,15 +29,15 @@ function startStreaming() {
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ පර්ෆෙක්ට් ෆිල්ටර් එක (කිසිම ලේබල් පැටලීමක් නැත)
-        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[audio_guard];' +
-        '[1:a]lowpass=f=1200,volume=0.9[rain_vibe];' + 
-        '[audio_guard][rain_vibe]amix=inputs=2:duration=first:weights=6 3[mixed_audio];' +
-        '[mixed_audio]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_waves];' + 
-        '[0:v]scale=720:480,fps=10[v_bg];' + 
-        '[v_bg][v_waves]overlay=0:360[final_video_out]', 
-        '-map', '[final_video_out]', 
-        '-map', '[mixed_audio]',
+        // ඉතාම සරල කරපු ෆිල්ටර් එක. මෙතන නම් පාවිච්චි කරලා නැහැ.
+        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[a1];' +
+        '[1:a]lowpass=f=1200,volume=0.9[a2];' + 
+        '[a1][a2]amix=inputs=2:duration=first:weights=6 3[amixout];' +
+        '[amixout]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[vwaves];' + 
+        '[0:v]scale=720:480,fps=10[vbg];' + 
+        '[vbg][vwaves]overlay=0:360[vout]', 
+        '-map', '[vout]', 
+        '-map', '[amixout]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-crf', '32', '-b:v', '400k', 
         '-pix_fmt', 'yuv420p', '-g', '20', 
