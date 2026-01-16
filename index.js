@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Emergency Fix! 📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Beat Mode is LIVE! 🌧️📻🥁'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,24 +21,25 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("FINAL ATTEMPT - Stream Starting...");
+    console.log("Starting BEAT-SYNC Stream (Excellent Signal)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-loop', '1', '-i', videoFile,
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.02', 
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ Audio Mix & Copyright Guard
-        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m];' +
-        '[1:a]lowpass=f=1200,volume=0.8[r];' + 
-        '[m][r]amix=inputs=2:duration=first:weights=6 2[audio_final];' +
-        // 📊 Sound Bars & Video Scale
-        '[audio_final]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[waves];' + 
-        '[0:v]scale=720:480,fps=10[video_scaled];' + 
-        '[video_scaled][waves]overlay=0:360[outv]', 
-        '-map', '[outv]', 
-        '-map', '[audio_final]',
+        // 1. Audio: 1.05x Speed + Pitch Guard + Rain Mix
+        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m_vibe];' +
+        '[1:a]lowpass=f=1200,volume=0.9[r_vibe];' + 
+        '[m_vibe][r_vibe]amix=inputs=2:duration=first:weights=6 3[audio_out];' +
+        // 2. Visualizer: සින්දුවේ Beat එකට යන Vertical Bars (p2p mode)
+        '[audio_out]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_beat_bars];' + 
+        // 3. Video: CPU Risk 0 (Excellent Signal)
+        '[0:v]scale=720:480,fps=10[v_bg];' + 
+        '[v_bg][v_beat_bars]overlay=0:360[v_final]', 
+        '-map', '[v_final]', 
+        '-map', '[audio_out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-crf', '32',
         '-b:v', '400k', 
