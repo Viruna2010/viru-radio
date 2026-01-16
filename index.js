@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Fix Live! 📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Zero Risk Active! 🌧️📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,7 +21,7 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting FINAL STABLE stream...");
+    console.log("Starting FINAL STABLE stream (Rain + Pitch Guard + Bars)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -29,15 +29,17 @@ function startStreaming() {
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.03', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 🛠️ Simple Flow: Audio Mix -> Visualizer -> Overlay
+        // 1. Audio Processing: Pitch Guard (1.05x) + Rain Mix
         '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m_audio];' +
         '[1:a]lowpass=f=1200,volume=0.9[r_audio];' + 
-        '[m_audio][r_audio]amix=inputs=2:duration=first:weights=6 3[audio_out];' +
-        '[audio_out]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[wave_v];' + 
-        '[0:v]scale=720:480,fps=10[bg_v];' + 
-        '[bg_v][wave_v]overlay=0:360[final_v]', 
-        '-map', '[final_v]', 
-        '-map', '[audio_out]',
+        '[m_audio][r_audio]amix=inputs=2:duration=first:weights=6 3[a_out];' +
+        // 2. Visualizer: Beat එකට අනුව යන Bars
+        '[a_out]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_bars];' + 
+        // 3. Video Processing: 10fps for Zero Lag
+        '[0:v]scale=720:480,fps=10[v_bg];' + 
+        '[v_bg][v_bars]overlay=0:360[v_out]', 
+        '-map', '[v_out]', 
+        '-map', '[a_out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-crf', '32', '-b:v', '400k', 
         '-pix_fmt', 'yuv420p', '-g', '20', 
