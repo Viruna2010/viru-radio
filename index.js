@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Stable Master! 🌧️📻'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Final Emergency Fix! 📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,7 +21,7 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting FINAL STABLE STREAM (Excellent Signal)...");
+    console.log("FINAL ATTEMPT - Stream Starting...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -29,17 +29,16 @@ function startStreaming() {
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.02', 
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-filter_complex', 
-        // 1. Audio Processing: Pitch Guard + Rain Mix (Labels fixed)
-        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m_guard];' +
-        '[1:a]lowpass=f=1200,volume=0.8[r_vibe];' + 
-        '[m_guard][r_vibe]amix=inputs=2:duration=first:weights=6 2[a_fin];' +
-        // 2. Visualizer: Sound Bars (Labels fixed)
-        '[a_fin]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[v_waves];' + 
-        // 3. Video Processing: Zero Lag settings
-        '[0:v]scale=720:480,fps=10[v_sc];' + 
-        '[v_sc][v_waves]overlay=0:360[v_out]', 
-        '-map', '[v_out]', 
-        '-map', '[a_fin]',
+        // 🛠️ Audio Mix & Copyright Guard
+        '[2:a:0]asetrate=44100*1.05,aresample=44100,volume=1.2[m];' +
+        '[1:a]lowpass=f=1200,volume=0.8[r];' + 
+        '[m][r]amix=inputs=2:duration=first:weights=6 2[audio_final];' +
+        // 📊 Sound Bars & Video Scale
+        '[audio_final]showwaves=s=640x120:mode=p2p:colors=0x00FFFF@0.8,format=rgba[waves];' + 
+        '[0:v]scale=720:480,fps=10[video_scaled];' + 
+        '[video_scaled][waves]overlay=0:360[outv]', 
+        '-map', '[outv]', 
+        '-map', '[audio_final]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-crf', '32',
         '-b:v', '400k', 
