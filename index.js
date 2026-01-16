@@ -8,7 +8,7 @@ const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
 // Render එකට සර්වර් එක Active කියලා පෙන්වීමට
-app.get('/', (req, res) => res.send('Viru Radio PRO - Ultra Signal Optimization Active! 🛡️🚀'));
+app.get('/', (req, res) => res.send('Viru Radio PRO - Ultra Stable & Loop Active! 🛡️🚀'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -23,25 +23,26 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting ULTRA LOW SIGNAL Stream (Optimized for Render)...");
+    console.log("Starting ULTRA STABLE Stream (Signal & Loop Optimized)...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile,               // Input 0
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',     // Input 1 (හීනි වැස්ස)
-        '-f', 'concat', '-safe', '0', '-i', playlistPath,    // Input 2 (ප්ලේලිස්ට්)
+        '-stream_loop', '-1', '-i', videoFile,               // වීඩියෝව සදහටම ලූප් වේ
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005',     // හීනි වැසි සද්දය (0.005)
+        '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, // සින්දු ප්ලේලිස්ට් එක සදහටම ලූප් වේ
         '-filter_complex', 
-        // උඹ ඉල්ලපු අනිත් ඔක්කොම සෙටින්ග්ස් මෙතන තියෙනවා:
+        // silenceremove: සින්දු අතර පරතරය නැති කරයි
+        // volume=1.8: සින්දුවේ සද්දය වැඩි කරයි
         '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,atempo=1.03,asetrate=44100*1.02,aresample=44100,volume=1.8[music]; [music][1:a]amix=inputs=2:duration=first:weights=10 1:dropout_transition=0[out]',
         '-map', '0:v', 
         '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-b:v', '250k',                // සිග්නල් වලට ඔරොත්තු දෙන ලෙස අඩු කළා
-        '-maxrate', '250k', 
-        '-bufsize', '500k', 
-        '-s', '640x360',               // 360p (සිග්නල් Poor එක නැති කිරීමට හොඳම ක්‍රමය)
+        '-b:v', '200k',                // සිග්නල් Poor නොවන්නට බිට්රේට් එක අඩු කරන ලදී
+        '-maxrate', '200k', 
+        '-bufsize', '400k', 
+        '-s', '640x360',               // වීඩියෝව 360p ලෙස ස්ට්‍රීම් වේ (සිග්නල් වලට හිතකරයි)
         '-pix_fmt', 'yuv420p', '-g', '60', 
-        '-c:a', 'aac', '-b:a', '64k',   // සින්දුවට බර අඩු කළා
+        '-c:a', 'aac', '-b:a', '64k',   // සද්දයේ බර අඩු කර සිනිදුවට ප්ලේ වීමට
         '-ar', '44100',
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
@@ -60,6 +61,4 @@ app.listen(port, '0.0.0.0', () => {
     if (STREAM_KEY) {
         startStreaming();
     } else {
-        console.log("Error: STREAM_KEY is missing!");
-    }
-});
+        console.
