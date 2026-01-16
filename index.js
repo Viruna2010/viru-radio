@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('Viru Beatz Radio - Ultra Stable PRO Active! 📻🛡️'));
+app.get('/', (req, res) => res.send('Viru Beatz Radio - Zero Risk Active! 📻🛡️'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -22,21 +22,21 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting ZERO RISK Stream with Pulse & Visualizer...");
+    console.log("Starting FINAL STABLE Stream...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-loop', '1', '-i', videoFile, // Background Image
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005', // Rain Noise (ලාවට වැස්සේ සද්දය)
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.005', // වැස්සේ සද්දය
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, // Music Loop
         '-filter_complex', 
-        // Audio processing: පට්ට කොලිටි ඕඩියෝ එකක් සඳහා
-        '[2:a]silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB,volume=1.8[music];' +
-        // Pulse Effect: පින්තූරයේ දීප්තිය ලාවට නිවී නිවී පත්තුවීම (CPU එකට කිසිම බරක් නැහැ)
+        // Audio processing: මෙතැනදී තමයි සින්දුවට Visualizer එක සෙට් වෙන්නේ
+        '[2:a]volume=1.8[music];' +
+        // Pulse Effect: පින්තූරයේ දීප්තිය ලාවට නිවී නිවී පත්තුවීම
         '[0:v]hue=b=\'0.5*sin(2*PI*t/5)+0.5\':s=1[v_pulse];' +
         // Visualizer: සින්දුවට අනුව හෙල්ලෙන Cyan පාට රේඛා
         '[music]showwaves=s=1280x120:mode=line:colors=0x00FFFF@0.6,format=rgba[v_waves];' + 
-        // Overlay: සේරම එකතු කිරීම
+        // Overlay: Visualizer එක පින්තූරයේ යටින්ම තැබීම
         '[v_pulse][v_waves]overlay=x=0:y=ih-120[final_v];' +
         '[music][1:a]amix=inputs=2:duration=first:weights=10 1[a_out]', 
         '-map', '[final_v]', 
