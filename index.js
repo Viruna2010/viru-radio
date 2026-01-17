@@ -7,21 +7,20 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - WHATSAPP VOICE & BASS FIXED! 🛡️🔊🔥'));
+app.get('/', (req, res) => res.send('VIRU FM - FORCE MIX ACTIVE! 🛡️🔊🔥'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
     const playlistPath = path.join(__dirname, 'playlist.txt');
     const videoFile = path.join(__dirname, 'video.mp4');
-    const jingleFile = path.join(__dirname, 'jingle.mp3'); // උඹ Rename කරපු WhatsApp Voice එක
+    const jingleFile = path.join(__dirname, 'jingle.mp3');
 
-    // 🎵 Playlist එක shuffle කරලා හදනවා
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
     files.sort(() => Math.random() - 0.5);
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("--- [SYSTEM START] VIRU FM: WHATSAPP VOICE + ORIGINAL BASS ---");
+    console.log("--- [FORCE MIX] STARTING STREAM WITH DIRECT VOICE INJECTION ---");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -30,12 +29,11 @@ function startStreaming() {
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath,
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
-        // 🛡️ MUSIC: උඹේ පරණ Ultra Shield එක සහ Bass එක (volume=1.5)
+        // 🎼 MUSIC: Original Bass (volume=1.5)
         '[2:a]atempo=1.08,asetrate=44100*1.05,aresample=44100,volume=1.5[shielded];' +
-        // 🎤 WHATSAPP VOICE FIX: Mono එක Stereo කරලා 44100Hz වලට Resample කරනවා.
-        // Volume 20.0 දාලා තියෙන්නේ උඹේ "Hello" එක පට්ට හයියෙන් ඇහෙන්න.
-        '[3:a]aresample=44100,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,adelay=60000|60000,aloop=loop=-1:size=2*44100,volume=20.0[jingles];' +
-        // 🎚️ MIXING: සින්දුවේ Bass එක බස්සන්නේ නැතුව "Hello" එක උඩින් දානවා (Weights 1 1)
+        // 🎤 VOICE: WhatsApp Opus Fix - volume 30.0 කටම වැඩි කළා (කෑගහලා ඇහෙන්න)
+        '[3:a]aresample=44100,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,volume=30.0,adelay=60000|60000,aloop=loop=-1:size=2*44100[jingles];' +
+        // 🎚️ MIX: weights=1 1 නිසා සින්දුවේ Bass එක බහින්නේ නැහැ
         '[shielded][jingles]amix=inputs=2:duration=first:dropout_transition=0:weights=1 1[mixed];' +
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=1 10[out]',
         '-map', '0:v', '-map', '[out]',
