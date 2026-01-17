@@ -17,7 +17,24 @@ function startStreaming() {
     const jingleFile = path.join(__dirname, 'jingle.mp3');
 
     // 🎵 Playlist Generation (Randomly Shuffled)
+    if (!fs.existsSync(musicDir)) {
+        console.log("CRITICAL ERROR: 'music' folder not found!");
+        return;
+    }
+
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
+    
+    // 🔍 සින්දු කීයක් අහු වුණාද කියලා ලොග්ස් වල පෙන්වනවා
+    console.log(`========================================`);
+    console.log(`TOTAL SONGS FOUND IN FOLDER: ${files.length}`);
+    console.log(`========================================`);
+
+    if (files.length === 0) {
+        console.log("ERROR: No .mp3 files found in music folder!");
+        setTimeout(startStreaming, 10000);
+        return;
+    }
+
     files.sort(() => Math.random() - 0.5);
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
@@ -26,10 +43,10 @@ function startStreaming() {
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile, // Video Input
-        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01', // Low Rain Noise
-        '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, // Music Input
-        '-stream_loop', '-1', '-i', jingleFile, // Jingle Input
+        '-stream_loop', '-1', '-i', videoFile, 
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01', 
+        '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
+        '-stream_loop', '-1', '-i', jingleFile, 
         '-filter_complex', 
         // 🛡️ Copyright Shield + Bass Boost
         '[2:a]atempo=1.08,asetrate=44100*1.05,aresample=44100,volume=1.6[shielded];' +
@@ -38,7 +55,7 @@ function startStreaming() {
         '[shielded][jingles]amix=inputs=2:duration=first:weights=5 30[mixed];' +
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
         '-map', '0:v', '-map', '[out]',
-        // 📉 Data Saving Settings (Lifetime Support)
+        // 📉 Data Saving Settings (180k Bitrate)
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
         '-b:v', '180k', '-maxrate', '180k', '-bufsize', '400k', 
         '-s', '640x360', '-pix_fmt', 'yuv420p', '-g', '60', 
@@ -47,7 +64,7 @@ function startStreaming() {
     ]);
 
     ffmpeg.stderr.on('data', (d) => {
-        // console.log(`FFmpeg: ${d}`); // Remove comments to see logs
+        // console.log(`FFmpeg: ${d}`); 
     });
 
     ffmpeg.on('close', (code) => {
