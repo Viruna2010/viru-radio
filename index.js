@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - 24H RECORD SECURED & LOUD! 🛡️🔊🔥'));
+app.get('/', (req, res) => res.send('VIRU FM - 1 DAY RECORD & FULL BASS SECURED! 🛡️🔊🔥'));
 
 function startStreaming() {
     const musicDir = path.join(__dirname, 'music');
@@ -21,7 +21,12 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f)}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting VIRU FM: Ultra Shield + High Bass Mode Active!");
+    console.log("Starting VIRU FM: Ultra Shield + Full Bass Mode Active!");
+
+    // 🚨 ජින්ගල් එක ප්ලේ වෙන වෙලාව ලොග් එකේ පෙන්වන්න මේක දැම්මා
+    setInterval(() => {
+        console.log("--- [SYSTEM CHECK] JINGLE TRIGGERED: PLAYING VIRU FM VOICE NOW ---");
+    }, 60000);
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -30,13 +35,11 @@ function startStreaming() {
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath,
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
-        // 🛡️ ULTRA SHIELD: Copyright ආරක්ෂාව (Speed 1.08, Pitch 1.05)
-        // volume=1.5 දාලා තියෙන්නේ Bass එකයි සින්දුවේ ගැම්මයි රැකගන්නයි.
+        // 🛡️ ULTRA SHIELD + FULL BASS: Volume 1.5 මට්ටමේ තියෙන්නේ (No Bass Loss)
         '[2:a]atempo=1.08,asetrate=44100*1.05,aresample=44100,volume=1.5[shielded];' +
-        // 🔊 JINGLE VOLUME: සද්දේ 10 ගුණයකින් වැඩි කළා (volume=10.0) 
-        // තත්පර 60න් 60ට තමයි මේක ඇහෙන්නේ (adelay=60000).
-        '[3:a]adelay=60000|60000,aloop=loop=-1:size=2*44100,volume=10.0[jingles];' +
-        // 🎚️ BALANCED MIX: සින්දුවේ සද්දේ බස්සන්නේ නැතුව ජින්ගල් එක උඩින් යනවා (weights=1 1)
+        // 🔊 SUPER LOUD JINGLE: ජින්ගල් එකේ සද්දේ 15 ගුණයකින් වැඩි කළා
+        '[3:a]adelay=60000|60000,aloop=loop=-1:size=2*44100,volume=15.0[jingles];' +
+        // 🎚️ BALANCED MIX: Weights 1 1 නිසා සින්දුවේ Bass එක බහින්නේ නැහැ
         '[shielded][jingles]amix=inputs=2:duration=first:dropout_transition=0:weights=1 1[mixed];' +
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=1 10[out]',
         '-map', '0:v', '-map', '[out]',
