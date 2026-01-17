@@ -7,43 +7,45 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - 24/7 STABLE MODE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - 24/7 ULTIMATE STABLE MODE! 🛡️🔊'));
 
 function startStreaming() {
-    const musicDir = path.join(__dirname, 'music');
-    const playlistPath = path.join(__dirname, 'playlist.txt');
-    const videoFile = path.join(__dirname, 'video.mp4');
-    const jingleFile = path.join(__dirname, 'jingle.mp3');
+    const musicDir = path.resolve(__dirname, 'music');
+    const playlistPath = path.resolve(__dirname, 'playlist.txt');
+    const videoFile = path.resolve(__dirname, 'video.mp4');
+    const jingleFile = path.resolve(__dirname, 'jingle.mp3');
 
     if (!fs.existsSync(musicDir)) {
         console.log("CRITICAL ERROR: 'music' folder not found!");
         return;
     }
 
+    // ✅ සියලුම .mp3 ෆයිල් අහු කරගන්නවා (Case insensitive)
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
     
     console.log(`========================================`);
-    console.log(`TOTAL SONGS FOUND: ${files.length}`);
+    console.log(`TOTAL SONGS DISCOVERED: ${files.length}`);
+    files.forEach(f => console.log(`-> Found: ${f}`)); 
     console.log(`========================================`);
 
     if (files.length === 0) {
-        console.log("ERROR: No songs to play!");
+        console.log("ERROR: No songs found in music folder!");
         setTimeout(startStreaming, 10000);
         return;
     }
 
+    // Shuffle songs
     files.sort(() => Math.random() - 0.5);
 
-    // ✅ මෙන්න මෙතන තමයි වැදගත්ම වෙනස! 
-    // සින්දුවේ නම ඇතුළේ තනි උද්ධෘත ලකුණු (single quotes) තිබුණත් වැඩ කරන විදිහට හැදුවා.
+    // ✅ ප්ලේලිස්ට් එකේ Paths හරියටම හදනවා (Fix for spaces and special characters)
     const playlistContent = files.map(f => {
-        const filePath = path.join(musicDir, f).replace(/'/g, "'\\''");
-        return `file '${filePath}'`;
+        const fullPath = path.join(musicDir, f).replace(/\\/g, '/');
+        return `file '${fullPath}'`;
     }).join('\n');
     
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting Lifetime Stream with Fix for Spaces/Symbols...");
+    console.log("Starting Lifetime Stream: Absolute Path + Re-encode Mode...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -52,7 +54,8 @@ function startStreaming() {
         '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, 
         '-stream_loop', '-1', '-i', jingleFile, 
         '-filter_complex', 
-        '[2:a]atempo=1.08,asetrate=44100*1.05,aresample=44100,volume=1.6[shielded];' +
+        // 🛡️ [2:a] කියන්නේ සින්දු ටික. ඒක re-sample කරලා ප්ලේ කරන නිසා corruption අඩු වෙනවා.
+        '[2:a]aresample=44100,atempo=1.08,asetrate=44100*1.05,volume=1.6[shielded];' +
         '[3:a]adelay=60000|60000,aloop=loop=-1:size=2*44100,volume=5.0[jingles];' +
         '[shielded][jingles]amix=inputs=2:duration=first:weights=5 30[mixed];' +
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
@@ -64,6 +67,14 @@ function startStreaming() {
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
+    // Error logging for debugging
+    ffmpeg.stderr.on('data', (data) => {
+        const msg = data.toString();
+        if (msg.includes('Error') || msg.includes('corrupt')) {
+            console.log(`FFmpeg Alert: ${msg}`);
+        }
+    });
+
     ffmpeg.on('close', (code) => {
         console.log(`Stream ended (Code: ${code}). Restarting in 3s...`);
         setTimeout(startStreaming, 3000);
@@ -71,6 +82,10 @@ function startStreaming() {
 }
 
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
-    if (STREAM_KEY) startStreaming();
+    console.log(`Viru FM Server Active on Port ${port}`);
+    if (STREAM_KEY) {
+        startStreaming();
+    } else {
+        console.log("CRITICAL: STREAM_KEY is missing!");
+    }
 });
