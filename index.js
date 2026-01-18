@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - REAL PLAYLIST LOOP ACTIVE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - NEVER ENDING LOOP! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -18,20 +18,19 @@ function startStreaming() {
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
     files.sort(() => Math.random() - 0.5);
     
-    // 🔄 වැදගත්: ප්ලේලිස්ට් එකේ අවසානයට ආයෙත් මුලට යන්න ලූප් එකක් හදනවා
+    // ලිස්ට් එක හදනවා
     const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("🔄 STARTING REAL PLAYLIST LOOP: All songs will play in order...");
+    console.log("🔄 STARTING INFINITE LOOP: Fixed the stopping issue...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-stream_loop', '-1', '-i', videoFile,
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01',
-        // 🚀 ලූප් එක මෙතනින් අයින් කරලා concat එක ඇතුළට දානවා (Fixed)
-        '-f', 'concat', 
-        '-safe', '0', 
-        '-i', playlistPath, 
+        // 🚀 මෙන්න මෙතනයි වැදගත්ම දේ: ප්ලේලිස්ට් එක පටන් ගන්න කලින්ම ලූප් එක දානවා
+        '-stream_loop', '-1', 
+        '-f', 'concat', '-safe', '0', '-i', playlistPath, 
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
         '[2:a]atempo=1.07,asetrate=44100*1.06,aresample=44100,volume=1.4[shielded];' +
@@ -52,10 +51,9 @@ function startStreaming() {
         }
     });
 
-    // 🔄 ප්ලේලිස්ට් එක ඉවර වුණ ගමන් FFmpeg එක නතර වෙනවා, එතකොට මේකෙන් ආයේ මුල ඉඳන් පටන් ගන්නවා
     ffmpeg.on('close', (code) => {
-        console.log("Playlist finished or crashed. Restarting playlist for continuous loop...");
-        setTimeout(startStreaming, 1000); 
+        console.log(`Process exited (${code}). Restarting immediately...`);
+        startStreaming(); // නතර වුණ ගමන් පටන් ගන්නවා
     });
 }
 
