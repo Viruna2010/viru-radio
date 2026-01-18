@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - 240P SIGNAL BOOST MODE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - NO-LAG LOOP 240P ACTIVE! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -20,13 +20,13 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("🚀 SIGNAL BOOST: 240p Mode with Stable Buffering...");
+    console.log("🚀 LOOP FIXED: Streaming 240p without gaps...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile,
+        '-stream_loop', '-1', '-i', videoFile, // වීඩියෝ ලූප් එක
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01',
-        '-f', 'concat', '-safe', '0', '-i', playlistPath,
+        '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, // ප්ලේලිස්ට් ලූප් එක (Fixed)
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
         '[2:a]atempo=1.07,asetrate=44100*1.06,aresample=44100,volume=1.4[shielded];' +
@@ -35,14 +35,13 @@ function startStreaming() {
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
         '-map', '0:v', '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        // 📈 Signal Poor Fix (240p Optimized)
-        '-b:v', '350k',        // 350k - YouTube Preparing එක නැති වෙන්න ඕනේ අවම ගාණ
+        '-b:v', '350k', 
         '-maxrate', '350k', 
-        '-bufsize', '1000k',   // Buffer එක වැඩියෙන් තියෙන එක සිග්නල් මදි වෙලාවට හොඳයි
-        '-r', '15',            // FPS 15 (ඩේටා ඉතුරුයි)
-        '-s', '426x240',       // 240p Resolution
+        '-bufsize', '1500k',   // Buffer එක වැඩි කළා සිග්නල් ප්‍රශ්න වලට
+        '-r', '15', 
+        '-s', '426x240', 
         '-pix_fmt', 'yuv420p', 
-        '-g', '30',            // Keyframes 
+        '-g', '30', 
         '-c:a', 'aac', '-b:a', '64k', '-ar', '44100',
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
