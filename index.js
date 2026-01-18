@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - NEVER ENDING LOOP! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - 80GB SAFE MODE ACTIVE! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -17,20 +17,16 @@ function startStreaming() {
 
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
     files.sort(() => Math.random() - 0.5);
-    
-    // ලිස්ට් එක හදනවා
     const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("🔄 STARTING INFINITE LOOP: Fixed the stopping issue...");
+    console.log("🚀 80GB TARGET: Optimized 240p with Strict Data Control...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-stream_loop', '-1', '-i', videoFile,
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01',
-        // 🚀 මෙන්න මෙතනයි වැදගත්ම දේ: ප්ලේලිස්ට් එක පටන් ගන්න කලින්ම ලූප් එක දානවා
-        '-stream_loop', '-1', 
-        '-f', 'concat', '-safe', '0', '-i', playlistPath, 
+        '-stream_loop', '-1', '-f', 'concat', '-safe', '0', '-i', playlistPath, 
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
         '[2:a]atempo=1.07,asetrate=44100*1.06,aresample=44100,volume=1.4[shielded];' +
@@ -39,8 +35,13 @@ function startStreaming() {
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
         '-map', '0:v', '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-b:v', '350k', '-maxrate', '350k', '-bufsize', '1500k', 
-        '-r', '15', '-s', '426x240', '-pix_fmt', 'yuv420p', '-g', '30', 
+        '-b:v', '300k',        // 📊 ඩේටා පාලනය (300k)
+        '-maxrate', '350k', 
+        '-bufsize', '600k', 
+        '-r', '12',            // FPS 12 (ඩේටා ඉතුරු කරන්න ප්‍රධානම දේ)
+        '-s', '426x240',       // 240p
+        '-pix_fmt', 'yuv420p', 
+        '-g', '24',            // Keyframes = FPS x 2 (YouTube එකට මේක වැදගත්)
         '-c:a', 'aac', '-b:a', '64k', '-ar', '44100',
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
@@ -51,10 +52,7 @@ function startStreaming() {
         }
     });
 
-    ffmpeg.on('close', (code) => {
-        console.log(`Process exited (${code}). Restarting immediately...`);
-        startStreaming(); // නතර වුණ ගමන් පටන් ගන්නවා
-    });
+    ffmpeg.on('close', () => setTimeout(startStreaming, 1000));
 }
 
 app.listen(port, '0.0.0.0', () => { if (STREAM_KEY) startStreaming(); });
