@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - NO-LAG LOOP 240P ACTIVE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - INFINITE LOOP ACTIVE! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -20,13 +20,17 @@ function startStreaming() {
     const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("🚀 LOOP FIXED: Streaming 240p without gaps...");
+    console.log("🔄 STARTING INFINITE LOOP: Songs will now repeat forever...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
-        '-stream_loop', '-1', '-i', videoFile, // වීඩියෝ ලූප් එක
+        '-stream_loop', '-1', '-i', videoFile,
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01',
-        '-f', 'concat', '-safe', '0', '-stream_loop', '-1', '-i', playlistPath, // ප්ලේලිස්ට් ලූප් එක (Fixed)
+        // 🚀 ලූප් එක හරියටම වැඩ කරන්න මේ පිළිවෙළට තියෙන්න ඕනේ:
+        '-stream_loop', '-1', 
+        '-f', 'concat', 
+        '-safe', '0', 
+        '-i', playlistPath, 
         '-stream_loop', '-1', '-i', jingleFile,
         '-filter_complex', 
         '[2:a]atempo=1.07,asetrate=44100*1.06,aresample=44100,volume=1.4[shielded];' +
@@ -35,25 +39,22 @@ function startStreaming() {
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
         '-map', '0:v', '-map', '[out]',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', 
-        '-b:v', '350k', 
-        '-maxrate', '350k', 
-        '-bufsize', '1500k',   // Buffer එක වැඩි කළා සිග්නල් ප්‍රශ්න වලට
-        '-r', '15', 
-        '-s', '426x240', 
-        '-pix_fmt', 'yuv420p', 
-        '-g', '30', 
+        '-b:v', '350k', '-maxrate', '350k', '-bufsize', '1500k', 
+        '-r', '15', '-s', '426x240', '-pix_fmt', 'yuv420p', '-g', '30', 
         '-c:a', 'aac', '-b:a', '64k', '-ar', '44100',
         '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
     ffmpeg.stderr.on('data', (d) => {
-        const msg = d.toString();
-        if (msg.includes('Opening')) {
-            console.log(`🎵 Playing: ${msg.trim().split('/').pop()}`);
+        if (d.toString().includes('Opening')) {
+            console.log(`🎵 Playing: ${d.toString().trim().split('/').pop()}`);
         }
     });
 
-    ffmpeg.on('close', () => setTimeout(startStreaming, 3000));
+    ffmpeg.on('close', (code) => {
+        console.log(`Process exited (${code}). Restarting...`);
+        setTimeout(startStreaming, 3000);
+    });
 }
 
 app.listen(port, '0.0.0.0', () => { if (STREAM_KEY) startStreaming(); });
