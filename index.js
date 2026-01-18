@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - INFINITE LOOP ACTIVE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - REAL PLAYLIST LOOP ACTIVE! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -17,17 +17,18 @@ function startStreaming() {
 
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
     files.sort(() => Math.random() - 0.5);
+    
+    // 🔄 වැදගත්: ප්ලේලිස්ට් එකේ අවසානයට ආයෙත් මුලට යන්න ලූප් එකක් හදනවා
     const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("🔄 STARTING INFINITE LOOP: Songs will now repeat forever...");
+    console.log("🔄 STARTING REAL PLAYLIST LOOP: All songs will play in order...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
         '-stream_loop', '-1', '-i', videoFile,
         '-f', 'lavfi', '-i', 'anoisesrc=c=white:a=0.01',
-        // 🚀 ලූප් එක හරියටම වැඩ කරන්න මේ පිළිවෙළට තියෙන්න ඕනේ:
-        '-stream_loop', '-1', 
+        // 🚀 ලූප් එක මෙතනින් අයින් කරලා concat එක ඇතුළට දානවා (Fixed)
         '-f', 'concat', 
         '-safe', '0', 
         '-i', playlistPath, 
@@ -51,9 +52,10 @@ function startStreaming() {
         }
     });
 
+    // 🔄 ප්ලේලිස්ට් එක ඉවර වුණ ගමන් FFmpeg එක නතර වෙනවා, එතකොට මේකෙන් ආයේ මුල ඉඳන් පටන් ගන්නවා
     ffmpeg.on('close', (code) => {
-        console.log(`Process exited (${code}). Restarting...`);
-        setTimeout(startStreaming, 3000);
+        console.log("Playlist finished or crashed. Restarting playlist for continuous loop...");
+        setTimeout(startStreaming, 1000); 
     });
 }
 
