@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 10000;
 const STREAM_KEY = process.env.STREAM_KEY;
 
-app.get('/', (req, res) => res.send('VIRU FM - HIGH STABILITY MODE ACTIVE! 🛡️🔊'));
+app.get('/', (req, res) => res.send('VIRU FM - LOGGING MODE ACTIVE! 🛡️🔊'));
 
 function startStreaming() {
     const musicDir = path.resolve(__dirname, 'music');
@@ -15,19 +15,29 @@ function startStreaming() {
     const videoFile = path.resolve(__dirname, 'video.mp4');
     const jingleFile = path.resolve(__dirname, 'jingle.mp3');
 
-    if (!fs.existsSync(musicDir)) return;
+    if (!fs.existsSync(musicDir)) {
+        console.log("ERROR: Music directory not found!");
+        return;
+    }
 
     let files = fs.readdirSync(musicDir).filter(f => f.toLowerCase().endsWith('.mp3'));
-    files.sort(() => Math.random() - 0.5);
-
-    const playlistContent = files.map(f => {
-        const fullPath = path.join(musicDir, f).replace(/\\/g, '/');
-        return `file '${fullPath}'`;
-    }).join('\n');
     
+    console.log(`========================================`);
+    console.log(`TOTAL SONGS DISCOVERED: ${files.length}`);
+    files.forEach(f => console.log(`-> Found: ${f}`));
+    console.log(`========================================`);
+
+    if (files.length === 0) {
+        console.log("ERROR: No MP3 files found in music folder!");
+        setTimeout(startStreaming, 5000);
+        return;
+    }
+
+    files.sort(() => Math.random() - 0.5);
+    const playlistContent = files.map(f => `file '${path.join(musicDir, f).replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(playlistPath, playlistContent);
 
-    console.log("Starting Stream: High Bitrate for YouTube Compliance...");
+    console.log("INITIATING FFMPEG STREAM...");
 
     const ffmpeg = spawn('ffmpeg', [
         '-re',
@@ -41,30 +51,29 @@ function startStreaming() {
         '[shielded][jingles]amix=inputs=2:duration=first:weights=5 30[mixed];' +
         '[1:a][mixed]amix=inputs=2:duration=shortest:weights=2 10[out]',
         '-map', '0:v', '-map', '[out]',
-        // 🚀 YouTube එකට ගැලපෙන විදිහට Bitrate වැඩි කළා
-        '-c:v', 'libx264', 
-        '-preset', 'veryfast', 
-        '-tune', 'zerolatency',
-        '-b:v', '1000k',       // 1Mbps Video (Preparing හිරවෙන එක නවත්තන්න)
-        '-maxrate', '1000k', 
-        '-bufsize', '2000k', 
-        '-s', '854x480',      // Standard 480p
-        '-pix_fmt', 'yuv420p', 
-        '-g', '60',           // Keyframe interval (Very important for YouTube)
-        '-c:a', 'aac', 
-        '-b:a', '128k', 
-        '-ar', '44100', 
-        '-f', 'flv', 
-        `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+        '-b:v', '500k', '-maxrate', '500k', '-bufsize', '1000k', 
+        '-s', '640x360', '-pix_fmt', 'yuv420p', '-g', '60', // Keyframes set to 60 for YouTube
+        '-c:a', 'aac', '-b:a', '128k', '-ar', '44100',
+        '-f', 'flv', `rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}`
     ]);
 
-    ffmpeg.stderr.on('data', (d) => {
-        if (d.toString().includes('Error')) console.log(`FFmpeg: ${d}`);
+    // 🖥️ මේකෙන් තමයි FFmpeg ඇතුළේ වෙන හැමදේම ලොග්ස් වල පෙන්වන්නේ
+    ffmpeg.stderr.on('data', (data) => {
+        const msg = data.toString();
+        // ගොඩක් වැදගත් ඒකක් හෝ Error එකක් නම් විතරක් පෙන්වන්න
+        if (msg.includes('Error') || msg.includes('Impossible') || msg.includes('Opening')) {
+            console.log(`FFmpeg Alert: ${msg.trim()}`);
+        }
     });
 
-    ffmpeg.on('close', () => setTimeout(startStreaming, 3000));
+    ffmpeg.on('close', (code) => {
+        console.log(`Stream ended (Code: ${code}). Restarting in 3s...`);
+        setTimeout(startStreaming, 3000);
+    });
 }
 
 app.listen(port, '0.0.0.0', () => {
+    console.log(`Viru FM Web Server Active on Port ${port}`);
     if (STREAM_KEY) startStreaming();
 });
